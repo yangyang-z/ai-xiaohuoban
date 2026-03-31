@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI小伙伴 - 作业管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding-bottom: 80px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 导航栏 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .nav-item {
+            text-align: center;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .nav-item.active {
+            color: #667eea;
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        /* 页面 */
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        /* 首页 */
+        .home-header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .user-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .home-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .home-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-num {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* 作业清单 */
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .add-homework {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .homework-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .btn-add {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        .import-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn-import {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .btn-import:active {
+            background: #f0f0f0;
+        }
+        
+        .homework-list {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+        }
+        
+        .homework-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .homework-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checkbox {
+            width: 28px;
+            height: 28px;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            margin-right: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .checkbox.checked {
+            background: #667eea;
+        }
+        
+        .checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 16px;
+        }
+        
+        .homework-content {
+            flex: 1;
+        }
+        
+        .homework-text {
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .homework-text.done {
+            text-decoration: line-through;
+            color: #999;
+        }
+        
+        .homework-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        .homework-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-action {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .btn-photo {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-delete {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        /* 计时器 */
+        .timer-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .timer-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .btn-timer {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .btn-start {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-pause {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .btn-reset {
+            background: #999;
+            color: white;
+        }
+        
+        .timer-modes {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .mode-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            background: white;
+        }
+        
+        .mode-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        /* 家长端 */
+        .parent-stats {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .parent-stat {
+            text-align: center;
+        }
+        
+        .parent-stat-num {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .parent-stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .record-section {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .record-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .record-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .record-item:last-child {
+            border-bottom: none;
+        }
+        
+        .record-info {
+            flex: 1;
+        }
+        
+        .record-text {
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .record-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        
+        .record-status {
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .status-done {
+            background: #e8f5e9;
+            color: #4CAF50;
+        }
+        
+        .status-pending {
+            background: #fff3e0;
+            color: #FF9800;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        
+        /* 粘贴导入 */
+        .paste-area {
+            display: none;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .paste-area.show {
+            display: block;
+        }
+        
+        .paste-textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: none;
+        }
+        
+        .paste-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn-confirm {
+            flex: 1;
+            padding: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .btn-cancel {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        /* 上传照片预览 */
+        .photo-preview {
+            display: none;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .photo-preview.show {
+            display: block;
+        }
+        
+        .photo-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 首页/作业清单 -->
+        <div id="homePage" class="page active">
+            <div class="home-header">
+                <div class="user-toggle">
+                    <button class="toggle-btn active" id="kidMode" onclick="switchUser('kid')">👦 孩子端</button>
+                    <button class="toggle-btn" id="parentMode" onclick="switchUser('parent')">👨‍👩‍👧 家长端</button>
+                </div>
+                <div class="home-title" id="pageTitle">📝 作业清单</div>
+                <div class="home-stats">
+                    <div class="stat-item">
+                        <div class="stat-num" id="totalCount">0</div>
+                        <div class="stat-label">总作业</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num" id="doneCount">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num" id="leftCount">0</div>
+                        <div class="stat-label">剩余</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 作业录入（孩子端可见） -->
+            <div id="addSection">
+                <div class="add-homework">
+                    <input type="text" class="homework-input" id="homeworkInput" placeholder="添加作业..." onkeypress="handleEnter(event)">
+                    <button class="btn-add" onclick="addHomework()">添加</button>
+                </div>
+                
+                <div class="import-buttons">
+                    <button class="btn-import" onclick="showPasteInput()">📋 粘贴导入</button>
+                    <button class="btn-import" onclick="document.getElementById('photoInput').click()">📷 拍照识别</button>
+                    <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                </div>
+                
+                <div class="paste-area" id="pasteArea">
+                    <textarea class="paste-textarea" id="pasteTextarea" placeholder="从微信复制作业粘贴到这里，每行一条..."></textarea>
+                    <div class="paste-btns">
+                        <button class="btn-confirm" onclick="importFromPaste()">确认导入</button>
+                        <button class="btn-cancel" onclick="hidePasteInput()">取消</button>
+                    </div>
+                </div>
+                
+                <div class="photo-preview" id="photoPreview">
+                    <p>📷 已识别作业内容：</p>
+                    <p id="recognizedText" style="font-size: 16px; margin: 10px 0; color: #333;"></p>
+                    <button class="btn-add" onclick="addRecognizedHomework()">添加到清单</button>
+                </div>
+            </div>
+            
+            <div class="homework-list" id="homeworkList">
+            </div>
+        </div>
+        
+        <!-- 计时器页 -->
+        <div id="timerPage" class="page">
+            <div class="section-title">⏱️ 作业计时器</div>
+            
+            <div class="timer-section">
+                <div class="timer-modes">
+                    <button class="mode-btn active" onclick="setTimerMode(25)">专注 25分钟</button>
+                    <button class="mode-btn" onclick="setTimerMode(15)">短休息 15分钟</button>
+                    <button class="mode-btn" onclick="setTimerMode(5)">长休息 5分钟</button>
+                </div>
+                
+                <div class="timer-display" id="timerDisplay">25:00</div>
+                
+                <div class="timer-controls">
+                    <button class="btn-timer btn-start" id="startBtn" onclick="startTimer()">开始</button>
+                    <button class="btn-timer btn-pause" id="pauseBtn" onclick="pauseTimer()" style="display: none;">暂停</button>
+                    <button class="btn-timer btn-reset" onclick="resetTimer()">重置</button>
+                </div>
+                
+                <div style="margin-top: 20px; color: #666; font-size: 14px;">
+                    <p>💡 番茄工作法：专注25分钟，休息5分钟</p>
+                </div>
+            </div>
+            
+            <!-- 计时记录 -->
+            <div class="record-section">
+                <div class="record-title">📊 今日计时记录</div>
+                <div id="timerRecords">
+                    <div class="empty-state">暂无计时记录</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 家长中心页 -->
+        <div id="parentPage" class="page">
+            <div class="section-title">👨‍👩‍👧 家长中心</div>
+            
+            <div class="parent-stats">
+                <div class="stats-grid">
+                    <div class="parent-stat">
+                        <div class="parent-stat-num" id="parentTotal">0</div>
+                        <div class="parent-stat-label">总作业</div>
+                    </div>
+                    <div class="parent-stat">
+                        <div class="parent-stat-num" id="parentDone">0</div>
+                        <div class="parent-stat-label">已完成</div>
+                    </div>
+                    <div class="parent-stat">
+                        <div class="parent-stat-num" id="parentRate">0%</div>
+                        <div class="parent-stat-label">完成率</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="record-section">
+                <div class="record-title">📝 作业记录</div>
+                <div id="parentHomeworkList">
+                    <div class="empty-state">暂无作业记录</div>
+                </div>
+            </div>
+            
+            <div class="record-section">
+                <div class="record-title">⏱️ 计时记录</div>
+                <div id="parentTimerRecords">
+                    <div class="empty-state">暂无计时记录</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="goToPage('home')">
+            <span class="nav-icon">📝</span>
+            作业
+        </div>
+        <div class="nav-item" onclick="goToPage('timer')">
+            <span class="nav-icon">⏱️</span>
+            计时
+        </div>
+        <div class="nav-item" onclick="goToPage('parent')">
+            <span class="nav-icon">👨‍👩‍👧</span>
+            家长
+        </div>
+    </div>
+    
+    <script>
+        // 状态管理
+        let homeworkList = JSON.parse(localStorage.getItem('homeworkList')) || [];
+        let timerRecords = JSON.parse(localStorage.getItem('timerRecords')) || [];
+        let currentUser = 'kid';
+        let recognizedHomework = '';
+        
+        // 计时器
+        let timerInterval = null;
+        let timeLeft = 25 * 60;
+        let isRunning = false;
+        
+        // 初始化
+        renderHomework();
+        updateStats();
+        
+        // 用户切换
+        function switchUser(user) {
+            currentUser = user;
+            document.getElementById('kidMode').classList.toggle('active', user === 'kid');
+            document.getElementById('parentMode').classList.toggle('active', user === 'parent');
+            
+            if (user === 'parent') {
+                document.getElementById('addSection').style.display = 'none';
+                document.getElementById('pageTitle').textContent = '👨‍👩‍👧 家长中心';
+                renderParentView();
+                goToPage('home');
+            } else {
+                document.getElementById('addSection').style.display = 'block';
+                document.getElementById('pageTitle').textContent = '📝 作业清单';
+            }
+        }
+        
+        // 页面导航
+        function goToPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(page + 'Page').classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                item.classList.remove('active');
+            });
+            
+            const navMap = { 'home': 0, 'timer': 1, 'parent': 2 };
+            if (navMap[page] !== undefined) {
+                document.querySelectorAll('.nav-item')[navMap[page]].classList.add('active');
+            }
+            
+            if (page === 'parent') {
+                renderParentView();
+            }
+        }
+        
+        // 作业功能
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                addHomework();
+            }
+        }
+        
+        function addHomework() {
+            const input = document.getElementById('homeworkInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            homeworkList.push({
+                text: text,
+                done: false,
+                photo: null,
+                time: new Date().toLocaleString(),
+                doneTime: null
+            });
+            
+            localStorage.setItem('homeworkList', JSON.stringify(homeworkList));
+            input.value = '';
+            renderHomework();
+            updateStats();
+        }
+        
+        function showPasteInput() {
+            document.getElementById('pasteArea').classList.add('show');
+        }
+        
+        function hidePasteInput() {
+            document.getElementById('pasteArea').classList.remove('show');
+            document.getElementById('pasteTextarea').value = '';
+        }
+        
+        function importFromPaste() {
+            const text = document.getElementById('pasteTextarea').value.trim();
+            if (!text) {
+                alert('请输入作业内容');
+                return;
+            }
+            
+            const lines = text.split('\n').filter(line => line.trim());
+            lines.forEach(line => {
+                homeworkList.push({
+                    text: line.trim(),
+                    done: false,
+                    photo: null,
+                    time: new Date().toLocaleString(),
+                    doneTime: null
+                });
+            });
+            
+            localStorage.setItem('homeworkList', JSON.stringify(homeworkList));
+            hidePasteInput();
+            renderHomework();
+            updateStats();
+            
+            alert('成功导入 ' + lines.length + ' 条作业！');
+        }
+        
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Demo版：模拟AI识别
+            alert('📷 已收到照片！\n\nDemo版说明：\n正式版会使用AI OCR识别作业内容。\n\n现在模拟识别结果...');
+            
+            // 模拟识别结果
+            const mockResults = [
+                '语文练习册第15-16页',
+                '数学计算题20道',
+                '英语单词抄写3遍',
+                '科学观察报告'
+            ];
+            recognizedHomework = mockResults[Math.floor(Math.random() * mockResults.length)];
+            
+            document.getElementById('recognizedText').textContent = recognizedHomework;
+            document.getElementById('photoPreview').classList.add('show');
+            
+            // 清空input
+            event.target.value = '';
+        }
+        
+        function addRecognizedHomework() {
+            if (!recognizedHomework) return;
+            
+            homeworkList.push({
+                text: recognizedHomework,
+                done: false,
+                photo: 'uploaded',
+                time: new Date().toLocaleString(),
+                doneTime: null
+            });
+            
+            localStorage.setItem('homeworkList', JSON.stringify(homeworkList));
+            document.getElementById('photoPreview').classList.remove('show');
+            recognizedHomework = '';
+            renderHomework();
+            updateStats();
+            
+            alert('作业已添加到清单！');
+        }
+        
+        function toggleHomework(index) {
+            homeworkList[index].done = !homeworkList[index].done;
+            homeworkList[index].doneTime = homeworkList[index].done ? new Date().toLocaleString() : null;
+            localStorage.setItem('homeworkList', JSON.stringify(homeworkList));
+            renderHomework();
+            updateStats();
+        }
+        
+        function deleteHomework(index) {
+            if (confirm('确定删除这条作业吗？')) {
+                homeworkList.splice(index, 1);
+                localStorage.setItem('homeworkList', JSON.stringify(homeworkList));
+                renderHomework();
+                updateStats();
+            }
+        }
+        
+        function renderHomework() {
+            const listDiv = document.getElementById('homeworkList');
+            
+            // 按完成状态排序：未完成的在前
+            const sortedList = [...homeworkList].sort((a, b) => a.done - b.done);
+            
+            if (sortedList.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state">还没有作业，快去添加吧～</div>';
+                return;
+            }
+            
+            listDiv.innerHTML = sortedList.map((item, index) => {
+                // 找到原始索引
+                const originalIndex = homeworkList.indexOf(item);
+                return `
+                    <div class="homework-item">
+                        <div class="checkbox ${item.done ? 'checked' : ''}" onclick="toggleHomework(${originalIndex})"></div>
+                        <div class="homework-content">
+                            <div class="homework-text ${item.done ? 'done' : ''}">${item.text}</div>
+                            <div class="homework-meta">${item.time}${item.photo ? ' 📷' : ''}</div>
+                        </div>
+                        <div class="homework-actions">
+                            <button class="btn-action btn-photo" onclick="alert('拍照功能：正式版会调用相机拍照')">📷</button>
+                            <button class="btn-action btn-delete" onclick="deleteHomework(${originalIndex})">删除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateStats() {
+            const total = homeworkList.length;
+            const done = homeworkList.filter(h => h.done).length;
+            const left = total - done;
+            
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('doneCount').textContent = done;
+            document.getElementById('leftCount').textContent = left;
+        }
+        
+        // 家长端视图
+        function renderParentView() {
+            const total = homeworkList.length;
+            const done = homeworkList.filter(h => h.done).length;
+            const rate = total > 0 ? Math.round(done / total * 100) : 0;
+            
+            document.getElementById('parentTotal').textContent = total;
+            document.getElementById('parentDone').textContent = done;
+            document.getElementById('parentRate').textContent = rate + '%';
+            
+            // 作业列表
+            const listDiv = document.getElementById('parentHomeworkList');
+            if (homeworkList.length === 0) {
+                listDiv.innerHTML = '<div class="empty-state">暂无作业记录</div>';
+            } else {
+                listDiv.innerHTML = homeworkList.slice().reverse().map(item => `
+                    <div class="record-item">
+                        <div class="record-info">
+                            <div class="record-text">${item.text}</div>
+                            <div class="record-time">添加时间：${item.time}</div>
+                        </div>
+                        <span class="record-status ${item.done ? 'status-done' : 'status-pending'}">
+                            ${item.done ? '已完成' : '未完成'}
+                        </span>
+                    </div>
+                `).join('');
+            }
+            
+            // 计时记录
+            const timerDiv = document.getElementById('parentTimerRecords');
+            if (timerRecords.length === 0) {
+                timerDiv.innerHTML = '<div class="empty-state">暂无计时记录</div>';
+            } else {
+                timerDiv.innerHTML = timerRecords.slice().reverse().map(r => `
+                    <div class="record-item">
+                        <div class="record-info">
+                            <div class="record-text">${r.type} - ${r.duration}分钟</div>
+                            <div class="record-time">${r.time}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // 计时器功能
+        function setTimerMode(minutes) {
+            timeLeft = minutes * 60;
+            isRunning = false;
+            clearInterval(timerInterval);
+            updateTimerDisplay();
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('pauseBtn').style.display = 'none';
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timerDisplay').textContent = 
+                String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+        }
+        
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'block';
+            
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                } else {
+                    // 计时结束
+                    clearInterval(timerInterval);
+                    alert('⏰ 时间到！');
+                    isRunning = false;
+                    document.getElementById('startBtn').style.display = 'block';
+                    document.getElementById('pauseBtn').style.display = 'none';
+                    
+                    // 记录计时
+                    const modeText = document.querySelector('.mode-btn.active').textContent;
+                    timerRecords.push({
+                        type: modeText,
+                        duration: 25,
+                        time: new Date().toLocaleString()
+                    });
+                    localStorage.setItem('timerRecords', JSON.stringify(timerRecords));
+                }
+            }, 1000);
+        }
+        
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('pauseBtn').style.display = 'none';
+        }
+        
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            timeLeft = 25 * 60;
+            updateTimerDisplay();
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('pauseBtn').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
